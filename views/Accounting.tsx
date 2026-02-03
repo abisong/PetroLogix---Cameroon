@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TaxRecord, Invoice, PurchaseOrder } from '../types';
 import { generateTaxSummary } from '../services/geminiService';
+import { Language } from '../translations';
 
 interface TaxForecastData {
   forecastItems: Array<{
@@ -18,23 +19,26 @@ interface AccountingProps {
   setTaxes: React.Dispatch<React.SetStateAction<TaxRecord[]>>;
   invoices: Invoice[];
   pos: PurchaseOrder[];
+  t: (key: any) => string;
+  language: Language;
 }
 
-const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos }) => {
+const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos, t, language }) => {
   const [taxForecast, setTaxForecast] = useState<TaxForecastData | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
     const fetchSummary = async () => {
       setLoadingReport(true);
-      const data = await generateTaxSummary(taxes);
+      // Pass current language to get translated tax summaries
+      const data = await generateTaxSummary(taxes, language);
       if (data) {
         setTaxForecast(data);
       }
       setLoadingReport(false);
     };
     fetchSummary();
-  }, [taxes]);
+  }, [taxes, language]);
 
   const handlePayTax = (id: string) => {
     setTaxes(prev => prev.map(t => t.id === id ? { ...t, status: 'Paid' } : t));
@@ -44,8 +48,8 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Tax & Compliance</h2>
-          <p className="text-slate-500">DRC tax obligations (TVA, IBC, Monthly & Quarterly)</p>
+          <h2 className="text-2xl font-bold text-slate-900">{t('accounting')}</h2>
+          <p className="text-slate-500">{language === 'en' ? 'DRC tax obligations (TVA, IBC, Monthly & Quarterly)' : 'Obligations fiscales RDC (TVA, IBC, Mensuel & Trimestriel)'}</p>
         </div>
       </div>
 
@@ -53,14 +57,14 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-800">Tax Payment Queue</h3>
+              <h3 className="font-semibold text-slate-800">{t('tax_payment_queue')}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="text-xs text-slate-500 font-bold uppercase border-b">
                   <tr>
-                    <th className="px-6 py-4">Period</th>
-                    <th className="px-6 py-4">Tax Type</th>
+                    <th className="px-6 py-4">{language === 'en' ? 'Period' : 'Période'}</th>
+                    <th className="px-6 py-4">{language === 'en' ? 'Tax Type' : 'Type Taxe'}</th>
                     <th className="px-6 py-4">Amount</th>
                     <th className="px-6 py-4">Due Date</th>
                     <th className="px-6 py-4">Status</th>
@@ -93,7 +97,7 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
                             onClick={() => handlePayTax(tax.id)}
                             className="text-amber-600 hover:text-amber-700 font-bold text-sm"
                           >
-                            Mark as Paid
+                            {language === 'en' ? 'Mark as Paid' : 'Marquer Payé'}
                           </button>
                         )}
                       </td>
@@ -112,9 +116,9 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <h3 className="font-bold text-lg">Quarterly Forecast</h3>
+                <h3 className="font-bold text-lg">{t('quarterly_forecast')}</h3>
               </div>
-              <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">AI Auditor Analysis</p>
+              <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">{language === 'en' ? 'AI Auditor Analysis' : 'Analyse de l\'Auditeur AI'}</p>
             </div>
             
             <div className="p-6 space-y-4">
@@ -160,7 +164,7 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-slate-400 text-sm">Unable to generate forecast. Verify connectivity.</p>
+                  <p className="text-slate-400 text-sm">{language === 'en' ? 'Unable to generate forecast.' : 'Impossible de générer les prévisions.'}</p>
                 </div>
               )}
             </div>
@@ -170,17 +174,17 @@ const Accounting: React.FC<AccountingProps> = ({ taxes, setTaxes, invoices, pos 
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>Export Detailed Filing Pack</span>
+                <span>{t('export_pack')}</span>
               </button>
             </div>
           </div>
 
           <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-6">
-            <h4 className="text-sm font-bold text-emerald-800 uppercase mb-3 tracking-wider">Compliance Status</h4>
+            <h4 className="text-sm font-bold text-emerald-800 uppercase mb-3 tracking-wider">{t('compliance_status')}</h4>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 bg-emerald-500 rounded-full"></span>
-                <span className="text-sm text-emerald-700">All Monthly Filings Up to Date</span>
+                <span className="text-sm text-emerald-700">{language === 'en' ? 'All Filings Up to Date' : 'Déclarations à jour'}</span>
               </div>
               <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

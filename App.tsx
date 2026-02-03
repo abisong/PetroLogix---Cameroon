@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewType, Supplier, Customer, Vehicle, TaxRecord, PurchaseOrder, Invoice } from './types';
 import { MOCK_SUPPLIERS, MOCK_CUSTOMERS, MOCK_VEHICLES, MOCK_TAXES, MOCK_POS, MOCK_INVOICES } from './constants';
+import { Language, translations } from './translations';
 import Dashboard from './views/Dashboard';
 import Suppliers from './views/Suppliers';
 import Customers from './views/Customers';
@@ -12,7 +13,8 @@ import Header from './components/Header';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('Dashboard');
-  const [suppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
+  const [language, setLanguage] = useState<Language>('en');
+  const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   const [customers] = useState<Customer[]>(MOCK_CUSTOMERS);
   const [vehicles, setVehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
   const [taxes, setTaxes] = useState<TaxRecord[]>(MOCK_TAXES);
@@ -20,9 +22,9 @@ const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Sync state to simulate persistence if needed
+  const t = (key: keyof typeof translations['en']) => translations[language][key] || key;
+
   useEffect(() => {
-    // Request geolocation for logistics simulation
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -32,61 +34,56 @@ const App: React.FC = () => {
             lastUpdate: new Date().toLocaleTimeString()
           } : v));
         },
-        (error) => console.warn("Geolocation blocked or unavailable:", error),
+        (error) => console.warn("Geolocation blocked:", error),
         { enableHighAccuracy: true }
       );
     }
   }, []);
 
   const renderView = () => {
+    const props = { t, language };
     switch (currentView) {
       case 'Dashboard':
-        return <Dashboard 
-                  pos={pos} 
-                  invoices={invoices} 
-                  taxes={taxes} 
-                  vehicles={vehicles}
-                  customers={customers}
-                />;
+        return <Dashboard {...props} pos={pos} invoices={invoices} taxes={taxes} vehicles={vehicles} customers={customers} />;
       case 'Suppliers':
-        return <Suppliers suppliers={suppliers} pos={pos} setPos={setPos} />;
+        return <Suppliers {...props} suppliers={suppliers} setSuppliers={setSuppliers} pos={pos} setPos={setPos} />;
       case 'Customers':
-        return <Customers customers={customers} invoices={invoices} setInvoices={setInvoices} />;
+        return <Customers {...props} customers={customers} invoices={invoices} setInvoices={setInvoices} />;
       case 'Accounting':
-        return <Accounting taxes={taxes} setTaxes={setTaxes} invoices={invoices} pos={pos} />;
+        return <Accounting {...props} taxes={taxes} setTaxes={setTaxes} invoices={invoices} pos={pos} />;
       case 'Logistics':
-        return <Logistics vehicles={vehicles} setVehicles={setVehicles} />;
+        return <Logistics {...props} vehicles={vehicles} setVehicles={setVehicles} />;
       default:
-        return <Dashboard pos={pos} invoices={invoices} taxes={taxes} vehicles={vehicles} customers={customers} />;
+        return <Dashboard {...props} pos={pos} invoices={invoices} taxes={taxes} vehicles={vehicles} customers={customers} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Sidebar - Desktop */}
       <div className="hidden md:flex flex-shrink-0">
-        <Sidebar activeView={currentView} setView={setCurrentView} />
+        <Sidebar activeView={currentView} setView={setCurrentView} t={t} />
       </div>
 
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-40 md:hidden bg-black/50 backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         >
-          <div className="w-64 h-full bg-slate-900 shadow-2xl animate-in slide-in-from-left duration-300" onClick={e => e.stopPropagation()}>
-            <Sidebar activeView={currentView} setView={(v) => { setCurrentView(v); setIsSidebarOpen(false); }} />
+          <div className="w-64 h-full bg-slate-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <Sidebar activeView={currentView} setView={(v) => { setCurrentView(v); setIsSidebarOpen(false); }} t={t} />
           </div>
         </div>
       )}
 
       <div className="flex flex-col flex-1 w-0 overflow-hidden">
         <Header 
-          title={currentView} 
+          title={t(currentView.toLowerCase() as any)} 
           onMenuClick={() => setIsSidebarOpen(true)} 
+          language={language}
+          setLanguage={setLanguage}
         />
         
-        <main className="flex-1 relative overflow-y-auto focus:outline-none p-4 md:p-6 lg:p-8">
+        <main className="flex-1 relative overflow-y-auto p-4 md:p-6 lg:p-8">
           {renderView()}
         </main>
       </div>

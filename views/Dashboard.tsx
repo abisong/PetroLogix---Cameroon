@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { PurchaseOrder, Invoice, TaxRecord, Vehicle, Customer } from '../types';
 import { getBusinessInsights } from '../services/geminiService';
+import { Language } from '../translations';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AIInsightData {
@@ -20,9 +21,11 @@ interface DashboardProps {
   taxes: TaxRecord[];
   vehicles: Vehicle[];
   customers: Customer[];
+  t: (key: any) => string;
+  language: Language;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, customers }) => {
+const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, customers, t, language }) => {
   const [aiInsight, setAiInsight] = useState<AIInsightData | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
 
@@ -48,12 +51,13 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
         fleetStatus: vehicles.map(v => v.status),
         customerCount: customers.length
       };
-      const result = await getBusinessInsights(data);
+      // Pass the current language to the service to get translated insights
+      const result = await getBusinessInsights(data, language);
       setAiInsight(result);
       setLoadingAi(false);
     };
     fetchAiInsights();
-  }, [totalReceivables, totalPayables, pendingTaxes, vehicles.length, customers.length]);
+  }, [totalReceivables, totalPayables, pendingTaxes, vehicles.length, customers.length, language]);
 
   const chartData = [
     { name: 'Mon', sales: 4000, expenses: 2400 },
@@ -67,38 +71,36 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard 
-          title="Account Receivable" 
+          title={t('receivables')} 
           value={`$${totalReceivables.toLocaleString()}`} 
           color="blue" 
           icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
         <StatCard 
-          title="Account Payable" 
+          title={t('payables')} 
           value={`$${totalPayables.toLocaleString()}`} 
           color="rose" 
           icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
         />
         <StatCard 
-          title="Pending Taxes" 
+          title={t('pending_taxes')} 
           value={`$${pendingTaxes.toLocaleString()}`} 
           color="amber" 
           icon="M9 14l6-6m-5.5.5h.5m.5 5.5h.5m-6 0h.5m8.5-5.5h.5m-1.5 8H5.5a2 2 0 01-2-2V5.5a2 2 0 012-2h13a2 2 0 012 2v13a2 2 0 01-2 2z"
         />
         <StatCard 
-          title="Active Vehicles" 
+          title={t('active_vehicles')} 
           value={`${vehicles.filter(v => v.status === 'In Transit').length}/${vehicles.length}`} 
           color="emerald" 
-          icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+          icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Charts Section */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold mb-6 text-slate-800">Sales vs Expenses (Weekly)</h3>
+          <h3 className="text-lg font-semibold mb-6 text-slate-800">{language === 'en' ? 'Sales vs Expenses (Weekly)' : 'Ventes vs Dépenses (Hebdo)'}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -113,7 +115,6 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
           </div>
         </div>
 
-        {/* Professional AI Insight Sidebar */}
         <div className="bg-slate-900 text-white rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-800">
           <div className="bg-slate-800/50 p-6 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-1">
@@ -121,13 +122,13 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <h3 className="text-sm font-black uppercase tracking-widest">Manager Intelligence</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{t('manager_intelligence')}</h3>
               </div>
               {loadingAi && (
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin"></div>
               )}
             </div>
-            <p className="text-slate-400 text-xs font-medium">Real-time business audit by Gemini AI</p>
+            <p className="text-slate-400 text-xs font-medium">{t('ai_audit')}</p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -167,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
               </>
             ) : (
               <div className="text-center py-10">
-                <p className="text-slate-500 text-sm">System ready. Awaiting next data sync.</p>
+                <p className="text-slate-500 text-sm">{language === 'en' ? 'System ready.' : 'Système prêt.'}</p>
               </div>
             )}
           </div>
@@ -178,19 +179,18 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
         </div>
       </div>
 
-      {/* Recent Activity Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-800">Recent Transactions</h3>
-          <button className="text-sm font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-3 py-1 rounded-lg transition-colors">Audit Trail</button>
+          <h3 className="text-lg font-semibold text-slate-800">{t('recent_transactions')}</h3>
+          <button className="text-sm font-bold text-amber-600 hover:text-amber-700 bg-amber-50 px-3 py-1 rounded-lg transition-colors">{t('audit_trail')}</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4">Ref ID</th>
-                <th className="px-6 py-4">Transaction Type</th>
-                <th className="px-6 py-4">Entity</th>
+                <th className="px-6 py-4">{language === 'en' ? 'Transaction Type' : 'Type de Transaction'}</th>
+                <th className="px-6 py-4">{language === 'en' ? 'Entity' : 'Entité'}</th>
                 <th className="px-6 py-4 text-right">Amount</th>
                 <th className="px-6 py-4">Status</th>
               </tr>
@@ -202,29 +202,13 @@ const Dashboard: React.FC<DashboardProps> = ({ pos, invoices, taxes, vehicles, c
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                      <span className="text-sm font-semibold text-slate-900">Sale Invoice</span>
+                      <span className="text-sm font-semibold text-slate-900">{language === 'en' ? 'Sale Invoice' : 'Facture Vente'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{customers.find(c => c.id === inv.customerId)?.name || 'Unknown'}</td>
                   <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">${inv.totalAmount.toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[10px] font-black uppercase tracking-tighter">{inv.status}</span>
-                  </td>
-                </tr>
-              ))}
-              {pos.slice(0, 3).map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-6 py-4 font-mono text-xs text-slate-400">{p.id}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      <span className="text-sm font-semibold text-slate-900">Stock Purchase</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">Supplier Node</td>
-                  <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">${p.totalAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-[10px] font-black uppercase tracking-tighter">{p.status}</span>
                   </td>
                 </tr>
               ))}
