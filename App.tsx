@@ -13,7 +13,7 @@ import Header from './components/Header';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('Dashboard');
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('fr');
   const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   const [customers] = useState<Customer[]>(MOCK_CUSTOMERS);
   const [vehicles, setVehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
