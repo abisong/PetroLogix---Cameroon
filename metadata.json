@@ -1,0 +1,7 @@
+{
+  "name": "PetroLogix Congo ERP",
+  "description": "Comprehensive ERP for oil distribution in DR Congo, featuring supplier management, customer invoicing, tax reporting, and GPS logistics tracking.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
